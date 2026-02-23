@@ -1,0 +1,124 @@
+name: Sync
+
+on:
+  schedule:
+    - cron: 0 0 * * *
+  workflow_dispatch:
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  TZ: Asia/Shanghai
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 自动同步所有 Containers 镜像
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          LIST_URL=https://raw.githubusercontent.com/${{ github.repository }}/main/containers.list
+
+          SUCCESS_IMAGES=()
+          SKIPPED_IMAGES=()
+          FAILED_IMAGES=()
+          sudo -E apt-get -qq update
+          sudo -E apt-get -qq install skopeo
+
+          skopeo login -p ${{ secrets.DOCKERHUB_TOKEN }} -u ${{ secrets.DOCKERHUB_USERNAME }} docker.io
+          skopeo login -p ${{ secrets.GITHUB_TOKEN }} -u ${{ github.repository_owner }} ghcr.io
+
+          echo "### 🔄 同步任务汇总" >>$GITHUB_STEP_SUMMARY
+          echo "| 镜像 | 状态 | 详情 |" >>$GITHUB_STEP_SUMMARY
+          echo "| :--- | :--- | :--- |" >>$GITHUB_STEP_SUMMARY
+
+          while read -r source_image; do
+              [[ $source_image =~ ^# || -z $source_image ]] && continue
+
+              image_ref=${source_image##*/}
+              target_image=ghcr.io/${{ github.repository_owner }}/$image_ref
+
+              echo "🚀 正在处理 $source_image"
+
+              raw_src=$(skopeo inspect --raw --retry-times 3 docker://$source_image 2>/dev/null)
+
+              if [[ -z $raw_src ]]; then
+                  echo "| $image_ref | ❌ 失败 | 镜像获取失败 |" >>$GITHUB_STEP_SUMMARY
+                  FAILED_IMAGES+=($source_image)
+                  continue
+              else
+                  src_digest=$(echo "$raw_src" | sha256sum | awk '{print $1}')
+              fi
+
+              raw_dst=$(skopeo inspect --raw --retry-times 3 docker://$target_image 2>/dev/null)
+
+              if [[ -z $raw_dst ]]; then
+                  dst_digest=none
+              else
+                  dst_digest=$(echo "$raw_dst" | sha256sum | awk '{print $1}')
+              fi
+
+              if [[ $src_digest == $dst_digest ]]; then
+                  echo "| $image_ref | ℹ️ 跳过 | 镜像无需更新 |" >>$GITHUB_STEP_SUMMARY
+                  SKIPPED_IMAGES+=($source_image)
+                  continue
+              fi
+
+              if skopeo copy -aq --retry-times 3 docker://$source_image docker://$target_image; then
+                  echo "| $image_ref | ✅ 成功 | 镜像同步成功 |" >>$GITHUB_STEP_SUMMARY
+                  SUCCESS_IMAGES+=($source_image)
+              else
+                  echo "| $image_ref | ❌ 失败 | 镜像同步失败 |" >>$GITHUB_STEP_SUMMARY
+                  FAILED_IMAGES+=($source_image)
+              fi
+          done < <(curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" $LIST_URL)
+
+          MSG=
+
+          function add_msg_block() {
+            local icon=$1
+            local title=$2
+            local -n arr=$3
+
+            [[ ${#arr[@]} -eq 0 ]] && return
+
+            MSG=${MSG}$'\n'"<b>${icon} ${title} ( ${#arr[@]} ):</b>"
+
+            for image in ${arr[@]}; do
+              MSG=${MSG}$'\n'"• <code>$image</code>"
+            done
+          }
+
+          add_msg_block "✅" "成功" SUCCESS_IMAGES
+          add_msg_block "ℹ️" "跳过" SKIPPED_IMAGES
+          add_msg_block "❌" "失败" FAILED_IMAGES
+
+          [[ -z "$MSG" ]] && MSG=$'\n'"<b>ℹ️ 本次无同步任务执行</b>"
+
+          printf "TG_MSG<<EOF\n%b\nEOF\n" "$MSG" >>$GITHUB_ENV
+
+      - name: 发送同步结果至 Telegram
+        uses: appleboy/telegram-action@v1.0.1
+        if: always()
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: html
+          message: |
+            <b>🚀 Containers 同步报告</b>
+            ${{ env.TG_MSG }}
+
+            <b>📦 项目信息</b>
+            仓库：<code>${{ github.repository }}</code>
+            分支：<code>${{ github.ref_name }}</code>
+            编号：<code>${{ github.run_number }}</code>
+
+            <b>👤 触发信息</b>
+            账号：<code>${{ github.actor }}</code>
+            触发：<code>${{ github.event_name }}</code>
+            哈希：<code>${{ github.sha }}</code>
+
+            <b>🔗 快速链接</b>
+            <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">📋 查看完整日志</a>
+            <a href="https://github.com/${{ github.repository }}/commit/${{ github.sha }}">💻 查看代码变更</a>

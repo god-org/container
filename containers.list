@@ -1,0 +1,17 @@
+docker.io/filebrowser/filebrowser:latest
+docker.io/hectorqin/reader:openj9-latest
+docker.io/hslr/sun-panel:latest
+docker.io/library/nginx:alpine
+docker.io/library/postgres:18-alpine
+docker.io/library/redis:alpine
+docker.io/neilpang/acme.sh:latest
+docker.io/nyanmisaka/jellyfin:latest
+docker.io/openlistteam/openlist:latest
+docker.io/portainer/agent:sts
+docker.io/portainer/portainer-ce:sts
+ghcr.io/cnk3x/xunlei:latest
+ghcr.io/dani-garcia/vaultwarden:alpine
+ghcr.io/diygod/rsshub:chromium-bundled
+ghcr.io/henryqw/awesome-ttrss:latest
+ghcr.io/p3terx/aria2-pro:latest
+ghcr.io/sagernet/sing-box:latest
