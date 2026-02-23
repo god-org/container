@@ -9,9 +9,3 @@ docker.io/nyanmisaka/jellyfin:latest
 docker.io/openlistteam/openlist:latest
 docker.io/portainer/agent:sts
 docker.io/portainer/portainer-ce:sts
-ghcr.io/cnk3x/xunlei:latest
-ghcr.io/dani-garcia/vaultwarden:alpine
-ghcr.io/diygod/rsshub:chromium-bundled
-ghcr.io/henryqw/awesome-ttrss:latest
-ghcr.io/p3terx/aria2-pro:latest
-ghcr.io/sagernet/sing-box:latest
