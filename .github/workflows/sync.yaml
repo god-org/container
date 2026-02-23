@@ -1,8 +1,6 @@
 name: Sync
 
 on:
-  schedule:
-    - cron: 0 0 * * *
   workflow_dispatch:
 
 env:
@@ -19,13 +17,12 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
         run: |
           LIST_URL=https://raw.githubusercontent.com/${{ github.repository }}/main/containers.list
-
           SUCCESS_IMAGES=()
           SKIPPED_IMAGES=()
           FAILED_IMAGES=()
+
           sudo -E apt-get -qq update
           sudo -E apt-get -qq install skopeo
-
           skopeo login -p ${{ secrets.DOCKERHUB_TOKEN }} -u ${{ secrets.DOCKERHUB_USERNAME }} docker.io
           skopeo login -p ${{ secrets.GITHUB_TOKEN }} -u ${{ github.repository_owner }} ghcr.io
 

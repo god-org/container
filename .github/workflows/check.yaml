@@ -1,0 +1,54 @@
+name: Check
+
+on:
+  schedule:
+    - cron: 0 0 * * *
+  workflow_dispatch:
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  TZ: Asia/Shanghai
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出当前仓库代码
+        uses: actions/checkout@v6
+
+      - name: 计算所有镜像的综合哈希
+        id: getHash
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          RAW_FILE: manifests.raw
+        run: |
+          sudo -E apt-get -qq update
+          sudo -E apt-get -qq install skopeo
+          skopeo login -p ${{ secrets.DOCKERHUB_TOKEN }} -u ${{ secrets.DOCKERHUB_USERNAME }} docker.io
+          >$RAW_FILE
+
+          while read -r source_image; do
+              [[ $source_image =~ ^# || -z $source_image ]] && continue
+              skopeo inspect --raw --retry-times 3 docker://$source_image >>$RAW_FILE || echo "$source_image-failed" >>$RAW_FILE
+          done <$RAW_FILE
+
+          hash=$(sha256sum $RAW_FILE | awk '{print $1}')
+          echo "imagesHash=$hash" >>$GITHUB_OUTPUT
+
+      - name: 对比镜像哈希（缓存校验）
+        id: cacheHash
+        uses: actions/cache@v5
+        with:
+          path: .imagesHash
+          key: imagesHash_${{ steps.getHash.outputs.imagesHash }}
+
+      - name: 保存新的镜像哈希到文件
+        if: steps.cacheHash.outputs.cache-hit != 'true'
+        run: |
+          echo "${{ steps.getHash.outputs.imagesHash }}" | tee .imagesHash
+
+      - name: 触发同步工作流
+        if: steps.cacheHash.outputs.cache-hit != 'true'
+        run: |
+          gh workflow run Sync
