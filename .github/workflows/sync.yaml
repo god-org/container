@@ -16,6 +16,7 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
+          set -x
           LIST_URL=https://raw.githubusercontent.com/${{ github.repository }}/main/containers.list
           SUCCESS_IMAGES=()
           SKIPPED_IMAGES=()
