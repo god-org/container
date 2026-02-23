@@ -16,7 +16,6 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
-          set -x
           LIST_URL=https://raw.githubusercontent.com/${{ github.repository }}/main/containers.list
           SUCCESS_IMAGES=()
           SKIPPED_IMAGES=()
@@ -43,7 +42,7 @@ jobs:
 
               if [[ -z $raw_src ]]; then
                   echo "| $image_ref | ❌ 失败 | 镜像获取失败 |" >>$GITHUB_STEP_SUMMARY
-                  FAILED_IMAGES+=($source_image)
+                  FAILED_IMAGES+=($image_ref)
                   continue
               else
                   src_digest=$(echo "$raw_src" | sha256sum | awk '{print $1}')
@@ -59,16 +58,16 @@ jobs:
 
               if [[ $src_digest == $dst_digest ]]; then
                   echo "| $image_ref | ℹ️ 跳过 | 镜像无需更新 |" >>$GITHUB_STEP_SUMMARY
-                  SKIPPED_IMAGES+=($source_image)
+                  SKIPPED_IMAGES+=($image_ref)
                   continue
               fi
 
               if skopeo copy -aq --retry-times 3 docker://$source_image docker://$target_image; then
                   echo "| $image_ref | ✅ 成功 | 镜像同步成功 |" >>$GITHUB_STEP_SUMMARY
-                  SUCCESS_IMAGES+=($source_image)
+                  SUCCESS_IMAGES+=($image_ref)
               else
                   echo "| $image_ref | ❌ 失败 | 镜像同步失败 |" >>$GITHUB_STEP_SUMMARY
-                  FAILED_IMAGES+=($source_image)
+                  FAILED_IMAGES+=($image_ref)
               fi
           done < <(curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" $LIST_URL)
 
