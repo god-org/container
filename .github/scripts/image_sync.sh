@@ -43,7 +43,7 @@ function main() {
   local raw_dst dst_digest_raw dst_digest
   local tg_msg_body
 
-  dependencies=('skopeo' 'curl' 'sha256sum')
+  dependencies=('skopeo' 'sha256sum')
   needs_update='true'
 
   for dependency in "${dependencies[@]}"; do
