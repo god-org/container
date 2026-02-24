@@ -39,11 +39,9 @@ function main() {
   local dependencies needs_update dependency
   local success_imgs skipped_imgs failed_imgs
   local source_image image_ref target_image
-  local raw_src src_digest_raw src_digest
-  local raw_dst dst_digest_raw dst_digest
-  local tg_msg_body
+  local src_digest dst_digest tg_msg_body
 
-  dependencies=('skopeo' 'sha256sum')
+  dependencies=('skopeo')
   needs_update='true'
 
   for dependency in "${dependencies[@]}"; do
@@ -85,23 +83,14 @@ function main() {
 
     log "正在处理：${source_image}"
 
-    raw_src="$(skopeo inspect --raw --retry-times 3 "docker://${source_image}" 2>/dev/null || :)"
-    if [[ -z "${raw_src}" ]]; then
+    src_digest="$(skopeo inspect --format '{{.Digest}}' --retry-times 3 "docker://${source_image}" 2>/dev/null || :)"
+    if [[ -z "${src_digest}" ]]; then
       echo "| ${image_ref} | ❌ 失败 | 镜像获取失败 |" >>"${GITHUB_STEP_SUMMARY}"
       failed_imgs+=("${image_ref}")
       continue
     fi
 
-    src_digest_raw="$(sha256sum <<<"${raw_src}")"
-    src_digest="${src_digest_raw%% *}"
-
-    raw_dst="$(skopeo inspect --raw --retry-times 3 "docker://${target_image}" 2>/dev/null || :)"
-    if [[ -z "${raw_dst}" ]]; then
-      dst_digest='none'
-    else
-      dst_digest_raw="$(sha256sum <<<"${raw_dst}")"
-      dst_digest="${dst_digest_raw%% *}"
-    fi
+    dst_digest="$(skopeo inspect --format '{{.Digest}}' --retry-times 3 "docker://${target_image}" 2>/dev/null || echo 'none')"
 
     if [[ "${src_digest}" == "${dst_digest}" ]]; then
       echo "| ${image_ref} | ℹ️ 跳过 | 镜像无需更新 |" >>"${GITHUB_STEP_SUMMARY}"

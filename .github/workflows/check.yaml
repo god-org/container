@@ -24,7 +24,6 @@ jobs:
           DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKER_PASS: ${{ secrets.DOCKERHUB_TOKEN }}
           LIST_FILE: containers.list
-          MANIFEST_FILE: manifests.raw
         run: |
           if ! command -v skopeo &>/dev/null; then
             sudo -E apt-get -qq update
@@ -33,22 +32,26 @@ jobs:
 
           skopeo login -u "${DOCKER_USER}" -p "${DOCKER_PASS}" docker.io
 
+          temp_manifest="$(mktemp)"
+          chmod 0600 "${temp_manifest}"
+          trap 'rm -f "${temp_manifest}"' EXIT
+
           {
             while read -r source_image || [[ -n "${source_image}" ]]; do
               source_image="${source_image#"${source_image%%[![:space:]]*}"}"
               source_image="${source_image%"${source_image##*[![:space:]]}"}"
               [[ -z "${source_image}" || "${source_image}" == "#"* ]] && continue
 
-              skopeo inspect --raw --retry-times 3 "docker://${source_image}" 2>/dev/null || echo "${source_image}-failed"
+              skopeo inspect --format '{{.Digest}}' --retry-times 3 "docker://${source_image}" 2>/dev/null || echo "${source_image}-failed"
             done <"${LIST_FILE}"
-          } >"${MANIFEST_FILE}"
+          } >"${temp_manifest}"
 
-          hash_raw=$(sha256sum "${MANIFEST_FILE}")
+          hash_raw=$(sha256sum "${temp_manifest}")
           images_hash="${hash_raw%% *}"
 
           echo "imagesHash=${images_hash}" >>"${GITHUB_OUTPUT}"
 
-          unset source_image hash_raw images_hash
+          unset temp_manifest source_image hash_raw images_hash
 
       - name: 对比镜像哈希（缓存校验）
         id: cacheHash
