@@ -60,10 +60,14 @@ jobs:
 
       - name: 保存新的镜像哈希到文件
         if: steps.cacheHash.outputs.cache-hit != 'true'
+        shell: bash
+        env:
+          TARGET_HASH: ${{ steps.getHash.outputs.imagesHash }}
         run: |
-          echo "${{ steps.getHash.outputs.imagesHash }}" | tee .imagesHash
+          echo "${TARGET_HASH}" >.imagesHash
 
       - name: 触发同步工作流
         if: steps.cacheHash.outputs.cache-hit != 'true'
+        shell: bash
         run: |
           gh workflow run Sync
