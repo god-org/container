@@ -23,6 +23,7 @@ jobs:
           REPO_OWNER: ${{ github.repository_owner }}
           REPO_NAME: ${{ github.event.repository.name }}
         run: |
+          set -x
           mapfile -t run_list < <(gh run list --limit 2 2>/dev/null || :)
           run_count="${#run_list[@]}"
 
