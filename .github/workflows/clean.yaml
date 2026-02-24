@@ -47,8 +47,8 @@ jobs:
         if: steps.status.outputs.run_count > '1'
         uses: Mattraks/delete-workflow-runs@v2
         with:
-          retain_days: ${{ inputs.deep_clean == true && 0 || 30 }}
-          keep_minimum_runs: ${{ inputs.deep_clean == true && 0 || 6 }}
+          retain_days: ${{ inputs.deep_clean == true && '0' || 30 }}
+          keep_minimum_runs: ${{ inputs.deep_clean == true && '0' || 6 }}
 
       - name: 清理 GitHub 发布版本
         if: steps.status.outputs.rel_count != '0'
