@@ -24,7 +24,7 @@ jobs:
         run: |
           script_file='./.github/scripts/image_sync.sh'
           if [[ ! -x "${script_file}" ]]; then
-              chmod +x "${script_file}"
+            chmod +x "${script_file}"
           fi
           "${script_file}"
           unset script_file
