@@ -27,7 +27,7 @@ function add_msg_block() {
 
   [[ "${#arr_ref[@]}" -eq 0 ]] && return
 
-  printf -v block_header "\n<b>%s %s ( %d ):</b>" "${icon}" "${title}" "${#arr_ref[@]}"
+  printf -v block_header "\n<b>%s %s（%d）：</b>" "${icon}" "${title}" "${#arr_ref[@]}"
   tg_msg_body="${tg_msg_body}${block_header}"
 
   for image in "${arr_ref[@]}"; do
