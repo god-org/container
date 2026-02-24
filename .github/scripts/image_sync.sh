@@ -124,5 +124,5 @@ function main() {
 
 main "$@"
 
-unset -f log error add_msg_block main
 unset LIST_FILE TARGET_REGISTRY
+unset -f log error add_msg_block main
