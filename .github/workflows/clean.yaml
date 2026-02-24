@@ -30,8 +30,13 @@ jobs:
           mapfile -t rel_list < <(gh release list --limit 1 2>/dev/null || :)
           rel_count="${#rel_list[@]}"
 
-          pkg_count=$(gh api "/orgs/${REPO_OWNER}/packages?package_type=container&per_page=100" \
-              --jq "[.[] | select(.repository.name == \"${REPO_NAME}\")] | length" 2>/dev/null || echo "0")
+          pkg_count=$(gh api -H "Accept: application/vnd.github+json" \
+            "/orgs/${REPO_OWNER}/packages?package_type=container&per_page=100" \
+            --jq "[.[]? | select(.repository?.name == \"${REPO_NAME}\")] | length" 2>/dev/null || echo "0")
+
+          if [[ ! "${pkg_count}" =~ ^[0-9]+$ ]]; then
+              pkg_count='0'
+          fi
 
           {
               echo "run_count=${run_count}"
