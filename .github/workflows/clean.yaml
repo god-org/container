@@ -37,8 +37,6 @@ jobs:
             echo "pkg_count=${pkg_count}"
           } >>"${GITHUB_OUTPUT}"
 
-          unset run_list run_count rel_list rel_count pkg_count
-
       - name: 清理 Actions 运行记录
         if: steps.status.outputs.run_count > '1'
         uses: Mattraks/delete-workflow-runs@v2

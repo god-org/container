@@ -17,17 +17,14 @@ jobs:
       - name: 自动同步所有 Containers 镜像
         shell: bash
         env:
+          SCRIPT_FILE: ./.github/scripts/image_sync.sh
           DEBIAN_FRONTEND: noninteractive
           DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKER_PASS: ${{ secrets.DOCKERHUB_TOKEN }}
           REPO_OWNER: ${{ github.repository_owner }}
         run: |
-          script_file='./.github/scripts/image_sync.sh'
-          if [[ ! -x "${script_file}" ]]; then
-            chmod +x "${script_file}"
-          fi
-          "${script_file}"
-          unset script_file
+          [[ ! -x "${SCRIPT_FILE}" ]] && chmod +x "${SCRIPT_FILE}"
+          "${SCRIPT_FILE}"
 
       - name: 发送同步结果至 Telegram
         uses: appleboy/telegram-action@v1.0.1

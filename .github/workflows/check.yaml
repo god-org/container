@@ -51,8 +51,6 @@ jobs:
 
           echo "imagesHash=${images_hash}" >>"${GITHUB_OUTPUT}"
 
-          unset temp_manifest source_image hash_raw images_hash
-
       - name: 对比镜像哈希（缓存校验）
         id: cacheHash
         uses: actions/cache@v5
