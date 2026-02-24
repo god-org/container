@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: 0 0 * * 0
   workflow_dispatch:
+    inputs:
+      deep_clean:
+        type: boolean
+        description: 启用彻底清理
+        required: false
+        default: false
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -40,14 +46,20 @@ jobs:
       - name: 清理 Actions 运行记录
         if: steps.status.outputs.run_count > '1'
         uses: Mattraks/delete-workflow-runs@v2
+        with:
+          retain_days: ${{ inputs.deep_clean == true && 0 || 30 }}
+          keep_minimum_runs: ${{ inputs.deep_clean == true && 0 || 6 }}
 
       - name: 清理 GitHub 发布版本
         if: steps.status.outputs.rel_count != '0'
         uses: sgpublic/delete-release-action@v1.2
         with:
           release-drop: true
-          release-keep-count: 10
-          draft-drop: false
+          release-keep-count: ${{ inputs.deep_clean == true && -1 || 10 }}
+          pre-release-drop: ${{ inputs.deep_clean == true && true || false }}
+          pre-release-keep-count: -1
+          draft-drop: ${{ inputs.deep_clean == true && true || false }}
+          draft-drop-count: -1
 
       - name: 清理 GHCR 镜像仓库
         if: steps.status.outputs.pkg_count != '0'
@@ -55,4 +67,4 @@ jobs:
         with:
           packages: acme.sh,filebrowser,jellyfin,nginx,portainer-ce,postgres,reader,redis,sun-panel
           keep-n-untagged: 0
-          keep-n-tagged: 10
+          keep-n-tagged: ${{ inputs.deep_clean == true && 1 || 10 }}
