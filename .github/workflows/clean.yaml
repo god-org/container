@@ -47,18 +47,18 @@ jobs:
         if: steps.status.outputs.run_count > '1'
         uses: Mattraks/delete-workflow-runs@v2
         with:
-          retain_days: ${{ inputs.deep_clean == true && '0' || 30 }}
-          keep_minimum_runs: ${{ inputs.deep_clean == true && '0' || 6 }}
+          retain_days: ${{ inputs.deep_clean && '0' || '30' }}
+          keep_minimum_runs: ${{ inputs.deep_clean && '0' || '6' }}
 
       - name: 清理 GitHub 发布版本
         if: steps.status.outputs.rel_count != '0'
         uses: sgpublic/delete-release-action@v1.2
         with:
           release-drop: true
-          release-keep-count: ${{ inputs.deep_clean == true && -1 || 10 }}
-          pre-release-drop: ${{ inputs.deep_clean == true && true || false }}
+          release-keep-count: ${{ inputs.deep_clean && '-1' || '10' }}
+          pre-release-drop: ${{ inputs.deep_clean && 'true' || 'false' }}
           pre-release-keep-count: -1
-          draft-drop: ${{ inputs.deep_clean == true && true || false }}
+          draft-drop: ${{ inputs.deep_clean && 'true' || 'false' }}
           draft-drop-count: -1
 
       - name: 清理 GHCR 镜像仓库
@@ -67,4 +67,4 @@ jobs:
         with:
           packages: acme.sh,filebrowser,jellyfin,nginx,portainer-ce,postgres,reader,redis,sun-panel
           keep-n-untagged: 0
-          keep-n-tagged: ${{ inputs.deep_clean == true && 1 || 10 }}
+          keep-n-tagged: ${{ inputs.deep_clean && '1' || '10' }}
