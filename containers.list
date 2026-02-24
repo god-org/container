@@ -2,7 +2,6 @@ docker.io/neilpang/acme.sh:latest
 docker.io/filebrowser/filebrowser:latest
 docker.io/nyanmisaka/jellyfin:latest
 docker.io/library/nginx:alpine
-docker.io/openlistteam/openlist:latest
 docker.io/portainer/portainer-ce:sts
 docker.io/library/postgres:18-alpine
 docker.io/hectorqin/reader:openj9-latest
