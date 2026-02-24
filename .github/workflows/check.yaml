@@ -23,7 +23,7 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
           DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKER_PASS: ${{ secrets.DOCKERHUB_TOKEN }}
-          LIST_FILE: containers.list
+          LIST_FILE: ./containers.list
         run: |
           if ! command -v skopeo &>/dev/null; then
             sudo -E apt-get -qq update

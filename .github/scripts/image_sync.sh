@@ -55,7 +55,7 @@ function main() {
     fi
   done
 
-  skopeo login -u "${DOCKERHUB_USERNAME:-}" -p "${DOCKERHUB_TOKEN:-}" docker.io
+  skopeo login -u "${DOCKER_USER:-}" -p "${DOCKER_PASS:-}" docker.io
   skopeo login -u "${REPO_OWNER:-}" -p "${GITHUB_TOKEN:-}" ghcr.io
 
   {

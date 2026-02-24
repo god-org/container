@@ -32,10 +32,10 @@ jobs:
           pkg_count=$(gh api "/orgs/${REPO_OWNER}/packages/container/${REPO_NAME}" &>/dev/null && echo '1' || echo '0')
 
           {
-              echo "run_count=${run_count}"
-              echo "rel_count=${rel_count}"
-              echo "pkg_count=${pkg_count}"
-          } >> "${GITHUB_OUTPUT}"
+            echo "run_count=${run_count}"
+            echo "rel_count=${rel_count}"
+            echo "pkg_count=${pkg_count}"
+          } >>"${GITHUB_OUTPUT}"
 
           unset run_list run_count rel_list rel_count pkg_count
 

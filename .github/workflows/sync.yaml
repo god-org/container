@@ -18,8 +18,8 @@ jobs:
         shell: bash
         env:
           DEBIAN_FRONTEND: noninteractive
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKER_PASS: ${{ secrets.DOCKERHUB_TOKEN }}
           REPO_OWNER: ${{ github.repository_owner }}
         run: |
           script_file='./.github/scripts/image_sync.sh'
