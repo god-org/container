@@ -12,29 +12,43 @@ env:
 jobs:
   check:
     runs-on: ubuntu-latest
-
     steps:
       - name: 检出当前仓库代码
         uses: actions/checkout@v6
 
       - name: 计算所有镜像的综合哈希
         id: getHash
+        shell: bash
         env:
           DEBIAN_FRONTEND: noninteractive
-          RAW_FILE: manifests.raw
+          DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKER_PASS: ${{ secrets.DOCKERHUB_TOKEN }}
+          LIST_FILE: containers.list
+          MANIFEST_FILE: manifests.raw
         run: |
-          sudo -E apt-get -qq update
-          sudo -E apt-get -qq install skopeo
-          skopeo login -p ${{ secrets.DOCKERHUB_TOKEN }} -u ${{ secrets.DOCKERHUB_USERNAME }} docker.io
-          >$RAW_FILE
+          if ! command -v skopeo &>/dev/null; then
+            sudo -E apt-get -qq update
+            sudo -E apt-get -qq install skopeo
+          fi
 
-          while read -r source_image; do
-              [[ $source_image =~ ^# || -z $source_image ]] && continue
-              skopeo inspect --raw --retry-times 3 docker://$source_image >>$RAW_FILE || echo "$source_image-failed" >>$RAW_FILE
-          done <$RAW_FILE
+          skopeo login -u "${DOCKER_USER}" -p "${DOCKER_PASS}" docker.io
 
-          hash=$(sha256sum $RAW_FILE | awk '{print $1}')
-          echo "imagesHash=$hash" >>$GITHUB_OUTPUT
+          {
+            while read -r source_image || [[ -n "${source_image}" ]]; do
+              source_image="${source_image#"${source_image%%[![:space:]]*}"}"
+              source_image="${source_image%"${source_image##*[![:space:]]}"}"
+              [[ -z "${source_image}" || "${source_image}" == "#"* ]] && continue
+
+              skopeo inspect --raw --retry-times 3 "docker://${source_image}" 2>/dev/null || echo "${source_image}-failed"
+            done <"${LIST_FILE}"
+          } >"${MANIFEST_FILE}"
+
+          hash_raw=$(sha256sum "${MANIFEST_FILE}")
+          images_hash="${hash_raw%% *}"
+
+          echo "imagesHash=${images_hash}" >>"${GITHUB_OUTPUT}"
+
+          unset source_image hash_raw images_hash
 
       - name: 对比镜像哈希（缓存校验）
         id: cacheHash

@@ -1,6 +1,8 @@
 name: Clean
 
 on:
+  schedule:
+    - cron: 0 0 * * 0
   workflow_dispatch:
 
 env:
@@ -10,25 +12,54 @@ env:
 jobs:
   clean:
     runs-on: ubuntu-latest
-    continue-on-error: true
-
     steps:
-      - name: 清理工作流运行记录
-        uses: Mattraks/delete-workflow-runs@v2
-        with:
-          retain_days: 0
-          keep_minimum_runs: 0
+      - name: 检出当前仓库代码
+        uses: actions/checkout@v6
 
-      - name: 清理版本发布记录
+      - name: 检查仓库资源状态
+        id: status
+        shell: bash
+        env:
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          mapfile -t run_list < <(gh run list --limit 2 2>/dev/null || :)
+          run_count="${#run_list[@]}"
+
+          mapfile -t rel_list < <(gh release list --limit 1 2>/dev/null || :)
+          rel_count="${#rel_list[@]}"
+
+          pkg_status_code=$(gh api "/orgs/${REPO_OWNER}/packages/container/${REPO_NAME}" --silent --output none -w "%{http_code}" 2>/dev/null || echo "404")
+
+          if [[ "${pkg_status_code}" == "200" ]]; then
+              pkg_exists='1'
+          else
+              pkg_exists='0'
+          fi
+
+          {
+              echo "run_count=${run_count}"
+              echo "rel_count=${rel_count}"
+              echo "pkg_count=${pkg_exists}"
+          } >> "${GITHUB_OUTPUT}"
+
+          unset run_list rel_list run_count rel_count pkg_status_code pkg_exists
+
+      - name: 清理 Actions 运行记录
+        if: steps.status.outputs.run_count > '1'
+        uses: Mattraks/delete-workflow-runs@v2
+
+      - name: 清理 GitHub 发布版本
+        if: steps.status.outputs.rel_count != '0'
         uses: sgpublic/delete-release-action@v1.2
         with:
           release-drop: true
-          release-keep-count: -1
-          pre-release-drop: true
-          pre-release-keep-count: -1
+          release-keep-count: 10
+          draft-drop: false
 
       - name: 清理 GHCR 镜像仓库
+        if: steps.status.outputs.pkg_count != '0'
         uses: dataaxiom/ghcr-cleanup-action@v1
         with:
           keep-n-untagged: 0
-          keep-n-tagged: 1
+          keep-n-tagged: 10
