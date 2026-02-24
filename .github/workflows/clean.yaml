@@ -21,7 +21,7 @@ jobs:
         shell: bash
         env:
           REPO_OWNER: ${{ github.repository_owner }}
-          REPO_NAME: ${{ github.event.repository.name }}
+          REPO_NAME: nginx
         run: |
           set -x
           mapfile -t run_list < <(gh run list --limit 2 2>/dev/null || :)
@@ -30,14 +30,7 @@ jobs:
           mapfile -t rel_list < <(gh release list --limit 1 2>/dev/null || :)
           rel_count="${#rel_list[@]}"
 
-          pkg_count=$(gh api graphql -F owner="${REPO_OWNER}" -F name="${REPO_NAME}" -f query='
-            query($owner: String!, $name: String!) {
-              repository(owner: $owner, name: $name) {
-                packages {
-                  totalCount
-                }
-              }
-            }' --jq '.data.repository.packages.totalCount' 2>/dev/null || echo "0")
+          pkg_count=$(gh api "/orgs/${REPO_OWNER}/packages/container/${REPO_NAME}" &>/dev/null && echo '1' || echo '0')
 
           {
               echo "run_count=${run_count}"
