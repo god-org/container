@@ -33,7 +33,7 @@ jobs:
           pkg_count=$(gh api graphql -F owner="${REPO_OWNER}" -F name="${REPO_NAME}" -f query='
             query($owner: String!, $name: String!) {
               repository(owner: $owner, name: $name) {
-                packages(packageType: CONTAINER) {
+                packages {
                   totalCount
                 }
               }
