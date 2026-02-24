@@ -34,7 +34,7 @@ jobs:
 
           temp_manifest="$(mktemp)"
           chmod 0600 "${temp_manifest}"
-          trap 'rm -f "${temp_manifest}"' EXIT
+          trap "rm -f '${temp_manifest}'" EXIT
 
           {
             while read -r source_image || [[ -n "${source_image}" ]]; do
