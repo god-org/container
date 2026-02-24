@@ -30,13 +30,8 @@ jobs:
           mapfile -t rel_list < <(gh release list --limit 1 2>/dev/null || :)
           rel_count="${#rel_list[@]}"
 
-          pkg_status_code=$(gh api "/orgs/${REPO_OWNER}/packages/container/${REPO_NAME}" --silent --output none -w "%{http_code}" 2>/dev/null || echo "404")
-
-          if [[ "${pkg_status_code}" == "200" ]]; then
-              pkg_exists='1'
-          else
-              pkg_exists='0'
-          fi
+          pkg_count=$(gh api "/orgs/${REPO_OWNER}/packages?package_type=container&per_page=100" \
+              --jq "[.[] | select(.repository.name == \"${REPO_NAME}\")] | length" 2>/dev/null || echo "0")
 
           {
               echo "run_count=${run_count}"
