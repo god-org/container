@@ -109,9 +109,9 @@ function main() {
   done <"${LIST_FILE}"
 
   tg_msg_body=''
-  add_msg_block "✅" "成功" success_imgs
-  add_msg_block "ℹ️" "跳过" skipped_imgs
-  add_msg_block "❌" "失败" failed_imgs
+  add_msg_block '✅' '成功' success_imgs
+  add_msg_block 'ℹ️' '跳过' skipped_imgs
+  add_msg_block '❌' '失败' failed_imgs
 
   [[ -z "${tg_msg_body}" ]] && tg_msg_body="\n<b>ℹ️ 本次无同步任务执行</b>"
 
