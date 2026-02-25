@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: 自动同步所有 Containers 镜像
-        shell: bash -euxo pipefail
+        shell: bash
         env:
           SCRIPT_FILE: .github/scripts/image_sync.sh
           DEBIAN_FRONTEND: noninteractive
@@ -23,6 +23,7 @@ jobs:
           DOCKER_PASS: ${{ secrets.DOCKERHUB_TOKEN }}
           REPO_OWNER: ${{ github.repository_owner }}
         run: |
+          set -euxo pipefail
           [[ ! -x "${SCRIPT_FILE}" ]] && chmod +x "${SCRIPT_FILE}"
           "./${SCRIPT_FILE}"
 

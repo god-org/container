@@ -24,11 +24,12 @@ jobs:
 
       - name: 检查仓库资源状态
         id: status
-        shell: bash -euxo pipefail
+        shell: bash
         env:
           REPO_OWNER: ${{ github.repository_owner }}
           REPO_NAME: nginx
         run: |
+          set -euxo pipefail
           mapfile -t run_list < <(gh run list --limit 2 2>/dev/null || :)
           run_count="${#run_list[@]}"
 

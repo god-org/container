@@ -18,13 +18,14 @@ jobs:
 
       - name: 计算所有镜像的综合哈希
         id: getHash
-        shell: bash -euxo pipefail
+        shell: bash
         env:
           DEBIAN_FRONTEND: noninteractive
           DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKER_PASS: ${{ secrets.DOCKERHUB_TOKEN }}
           LIST_FILE: containers.list
         run: |
+          set -euxo pipefail
           if ! command -v skopeo &>/dev/null; then
             sudo -E apt-get -qq update
             sudo -E apt-get -qq install skopeo
@@ -60,14 +61,16 @@ jobs:
 
       - name: 保存新的镜像哈希到文件
         if: steps.cacheHash.outputs.cache-hit != 'true'
-        shell: bash -euxo pipefail
+        shell: bash
         env:
           TARGET_HASH: ${{ steps.getHash.outputs.imagesHash }}
         run: |
+          set -euxo pipefail
           echo "${TARGET_HASH}" >.imagesHash
 
       - name: 触发同步工作流
         if: steps.cacheHash.outputs.cache-hit != 'true'
-        shell: bash -euxo pipefail
+        shell: bash
         run: |
+          set -euxo pipefail
           gh workflow run Sync
