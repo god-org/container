@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: 自动同步所有 Containers 镜像
-        shell: bash
+        shell: bash -euxo pipefail
         env:
           SCRIPT_FILE: .github/scripts/image_sync.sh
           DEBIAN_FRONTEND: noninteractive

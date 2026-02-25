@@ -18,7 +18,7 @@ jobs:
 
       - name: 计算所有镜像的综合哈希
         id: getHash
-        shell: bash
+        shell: bash -euxo pipefail
         env:
           DEBIAN_FRONTEND: noninteractive
           DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -60,7 +60,7 @@ jobs:
 
       - name: 保存新的镜像哈希到文件
         if: steps.cacheHash.outputs.cache-hit != 'true'
-        shell: bash
+        shell: bash -euxo pipefail
         env:
           TARGET_HASH: ${{ steps.getHash.outputs.imagesHash }}
         run: |
@@ -68,6 +68,6 @@ jobs:
 
       - name: 触发同步工作流
         if: steps.cacheHash.outputs.cache-hit != 'true'
-        shell: bash
+        shell: bash -euxo pipefail
         run: |
           gh workflow run Sync

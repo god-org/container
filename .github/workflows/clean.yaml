@@ -24,7 +24,7 @@ jobs:
 
       - name: 检查仓库资源状态
         id: status
-        shell: bash
+        shell: bash -euxo pipefail
         env:
           REPO_OWNER: ${{ github.repository_owner }}
           REPO_NAME: nginx

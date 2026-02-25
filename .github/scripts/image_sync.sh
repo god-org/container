@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -euxo pipefail
 
 if [[ "${BASH_VERSINFO[0]}" -lt 4 ]]; then
   echo "❌ 要求 Bash 版本 ≥ 4.0，当前版本：${BASH_VERSION}。" >&2
