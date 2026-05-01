@@ -1,0 +1,57 @@
+name: Check
+
+on:
+  schedule:
+    - cron: 0 16 * * *
+  workflow_dispatch:
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  TZ: Asia/Shanghai
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v6
+
+      - name: 获取信息
+        id: get
+        env:
+          CONF_FILE: images.list
+          BASH_LIB: ${{ secrets.BASH_URL }}/.bash_lib
+          DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          . <(curl -fsSL "$BASH_LIB") || exit 1
+
+          lib::need_f "$CONF_FILE"
+          lib::tmp_f tmp_file
+
+          skopeo login -u "$DOCKER_USER" -p "$DOCKER_TOKEN" docker.io
+
+          mapfile -t img_raw <"$CONF_FILE"
+          lib::tidy img_raw img_list
+
+          for img_row in "${img_list[@]}"; do
+            src_img=docker://$img_row
+            src_dig=$(skopeo inspect --format '{{.Digest}}' --retry-times 3 "$src_img" || :)
+            [[ $src_dig ]] && printf '%s\n' "$src_dig"
+          done >"$tmp_file"
+
+          chk_sum=$(sha256sum "$tmp_file")
+          printf '%s\n' "key=${chk_sum%% *}" >>"$GITHUB_OUTPUT"
+
+      - name: 缓存校验
+        id: cache
+        uses: actions/cache@v5
+        with:
+          path: .cache
+          key: ${{ steps.get.outputs.key }}
+
+      - name: 触发工作流
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          [[ -f .cache ]] || touch .cache
+          gh workflow run Sync

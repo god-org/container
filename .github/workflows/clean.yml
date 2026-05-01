@@ -1,0 +1,17 @@
+name: Clean
+
+on:
+  schedule:
+    - cron: 0 8 * * *
+  workflow_dispatch:
+    inputs:
+      f_deep:
+        description: 彻底清理
+        type: boolean
+
+jobs:
+  clean:
+    uses: god-org/actions/.github/workflows/clean.yml@main
+    with:
+      f_deep: ${{ inputs.f_deep || false }}
+    secrets: inherit

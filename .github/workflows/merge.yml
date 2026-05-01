@@ -1,0 +1,8 @@
+name: Merge
+
+on:
+  pull_request:
+
+jobs:
+  merge:
+    uses: god-org/actions/.github/workflows/merge.yml@main

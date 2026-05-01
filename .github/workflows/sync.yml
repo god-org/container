@@ -1,0 +1,59 @@
+name: Sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      f_ntfy:
+        description: 发送通知
+        type: boolean
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  TZ: Asia/Shanghai
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v6
+
+      - name: 同步所有 Containers 镜像
+        id: task
+        env:
+          RUN_SH: .github/scripts/image_sync.sh
+          CONF_FILE: images.list
+          BASH_LIB: ${{ secrets.BASH_URL }}/.bash_lib
+          DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          F_NTFY: ${{ inputs.f_ntfy }}
+        run: |
+          [[ -x $RUN_SH ]] || chmod +x "$RUN_SH"
+          "./$RUN_SH"
+
+      - name: 发送结果至 Telegram
+        uses: appleboy/telegram-action@v1.0.1
+        if: steps.task.outputs.msg != '' || inputs.f_ntfy
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: html
+          disable_web_page_preview: true
+          message: |
+            <b>🚀 Containers 同步报告</b>
+            ${{ steps.task.outputs.msg }}
+
+            <b>📦 项目信息</b>
+            仓库：<code>${{ github.repository }}</code>
+            分支：<code>${{ github.ref_name }}</code>
+            编号：<code>${{ github.run_number }}</code>
+
+            <b>👤 触发信息</b>
+            账号：<code>${{ github.actor }}</code>
+            触发：<code>${{ github.event_name }}</code>
+            哈希：<code>${{ github.sha }}</code>
+
+            <b>🔗 快速链接</b>
+            <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">📋 查看完整日志</a>
+            <a href="https://github.com/${{ github.repository }}/commit/${{ github.sha }}">💻 查看代码变更</a>
